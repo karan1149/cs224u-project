@@ -42,20 +42,19 @@ def main():
 
 			average_embedding = np.zeros(VEC_SIZE)
 			found_words = 0.0
+			total_words = 0.0
 
 			for token in caption_tokens:
 				vec = get_word_vector(token)
 				if vec is not None:
 					average_embedding += vec
 					found_words += 1
+				total_words += 1
 
 			if found_words:
 				average_embedding /= found_words
-			else:
-				print(line)
 
 			caption_data[filename].append(average_embedding)
-
 
 	with open(args.output_file, 'wb') as f:
 		pickle.dump(caption_data, f)

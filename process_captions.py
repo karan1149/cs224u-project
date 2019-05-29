@@ -12,7 +12,7 @@ parser.add_argument('output_file',
 
 args = parser.parse_args()
 
-results_path = 'flickr30k_data/results.csv'
+results_path = 'flickr30k_images/results.csv'
 VEC_SIZE = 300
 
 def main():

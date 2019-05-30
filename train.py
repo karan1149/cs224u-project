@@ -13,25 +13,30 @@ import similarity_functions
 import loss_functions
 from matplotlib import pyplot as plt
 import functools
+import os
 
-parser = argparse.ArgumentParser(description='Train alignment model for GloVe word embeddings on Flickr30k data.')
-# parser.add_argument('',
-#                     help='')
-parser.add_argument('--cuda', action='store_true',
-                    help='Whether to use GPU or not.')
+# parser = argparse.ArgumentParser(description='Train alignment model for GloVe word embeddings on Flickr30k data.')
+# # parser.add_argument('',
+# #                     help='')
+# parser.add_argument('--cuda', action='store_true',
+#                     help='Whether to use GPU or not.')
 
-args = parser.parse_args()
+# args = parser.parse_args()
 
-DEVICE = 'cuda' if args.cuda else 'cpu'
+DEVICE = 'cpu'
+if torch.cuda.is_available():
+    DEVICE = 'cuda'
 
-NUM_EPOCHS = 30
+print('Training on %s...' % DEVICE)
+
+NUM_EPOCHS = 200
 BATCH_SIZE = 1024
 LEARNING_RATE = 1e-4
 
 TRAIN_FRACTION = 0.90
 
-def main():
-    train_data, val_data = kt.lazy_load(functools.partial(utils.load_caption_image_data, train_fraction=TRAIN_FRACTION), 'outputs/caption_image_data.pkl')   
+def main(basepath):
+    train_data, val_data = kt.lazy_load(functools.partial(utils.load_caption_image_data, train_fraction=TRAIN_FRACTION), os.path.join(basepath, 'outputs/caption_image_data.pkl'))   
 
     train_caption_matrix, train_image_matrix, train_idx_dict = train_data   
     val_caption_matrix, val_image_matrix, val_idx_dict = val_data
@@ -61,36 +66,39 @@ def main():
                 pair_encoder.train()  # Set model to training mode
             else:
                 pair_encoder.eval()   # Set model to evaluate mode
-        
-            running_loss = 0.0
 
-            curr_data = train_data if phase == 'train' else val_data
+            with torch.set_grad_enabled(phase == 'train'):
 
-            num_batches = 0
-            for left_x, right_x in utils.flickr_dataloader(curr_data, BATCH_SIZE):
-                num_batches += 1
+                running_loss = 0.0
 
-                left_x.to(DEVICE)
-                right_x.to(DEVICE)
+                curr_data = train_data if phase == 'train' else val_data
 
-                left_encodings, right_encodings = pair_encoder(left_x, right_x)
+                num_batches = 0
+                for left_x, right_x in utils.flickr_dataloader(curr_data, BATCH_SIZE):
+                    num_batches += 1
 
-                similarities = similarity_functions.dot_product(left_encodings, right_encodings)
+                    left_x.to(DEVICE)
+                    right_x.to(DEVICE)
+
+                    left_encodings, right_encodings = pair_encoder(left_x, right_x)
+
+                    similarities = similarity_functions.dot_product(left_encodings, right_encodings)
 
 
-                criterion = loss_functions.PredictionSoftmaxLoss(predict_right=True)
+                    criterion = loss_functions.PredictionSoftmaxLoss(predict_right=True)
 
-                loss = criterion(similarities)
-                running_loss += loss.item()
+                    loss = criterion(similarities)
+                    running_loss += loss.item()
 
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
+                    if phase == 'train':
+                        optimizer.zero_grad()
+                        loss.backward()
+                        optimizer.step()
 
-            running_loss /= num_batches
+                running_loss /= num_batches
 
-            print(phase, 'loss', running_loss)
-            running_losses[phase].append(running_loss)
+                print(phase, 'loss', running_loss)
+                running_losses[phase].append(running_loss)
 
     plt.plot(running_losses['train'], label='Train')
     plt.plot(running_losses['val'], label='Val')
@@ -102,4 +110,4 @@ def main():
     torch.save(pair_encoder, 'outputs/pair_encoder.pkl')
 
 if __name__=='__main__':
-    main()
+    main('.')

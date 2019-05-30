@@ -102,3 +102,7 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+.DS_Store
+flickr30k_images/
+.vector_cache/
+outputs/

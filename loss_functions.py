@@ -27,7 +27,7 @@ class PredictionSoftmaxLoss(nn.Module):
 		if not self.predict_right:
 			similarities = similarities.transpose(0, 1)
 
-		criterion = nn.CrossEntropyLoss(reduction='sum')
+		criterion = nn.CrossEntropyLoss()
 		
 		return criterion(similarities, target)
 

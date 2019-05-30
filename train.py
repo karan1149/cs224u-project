@@ -29,11 +29,11 @@ if torch.cuda.is_available():
 
 print('Training on %s...' % DEVICE)
 
-NUM_EPOCHS = 200
+NUM_EPOCHS = 40
 BATCH_SIZE = 1024
 LEARNING_RATE = 1e-4
 
-TRAIN_FRACTION = 0.90
+TRAIN_FRACTION = 0.95
 
 def main(basepath):
     train_data, val_data = kt.lazy_load(functools.partial(utils.load_caption_image_data, train_fraction=TRAIN_FRACTION), os.path.join(basepath, 'outputs/caption_image_data.pkl'))   
@@ -104,10 +104,11 @@ def main(basepath):
     plt.plot(running_losses['val'], label='Val')
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
-    plt.title('Training using Dot Product and Softmax Right Pred. Loss')
+    plt.title('Loss: Dot Product + Softmax Right Prediction Task')
+    plt.legend(fancybox=True, framealpha=0.5)
     plt.savefig('outputs/losses.png')
 
-    torch.save(pair_encoder, 'outputs/pair_encoder.pkl')
+    torch.save(pair_encoder.state_dict(), 'outputs/pair_encoder.pkl')
 
 if __name__=='__main__':
     main('.')

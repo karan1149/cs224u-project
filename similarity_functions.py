@@ -10,11 +10,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-def cosine_similarity(left_encodings, right_encodings):
-	left_encodings_normalized = left_encodings / left_encodings.norm(dim=1)[:, None]
-	right_encodings_normalized = right_encodings / right_encodings.norm(dim=1)[:, None]
+def cosine_similarity(left_encodings, right_encodings, epsilon=1e-8):
+	left_encodings_normalized = left_encodings / torch.clamp(left_encodings.norm(dim=1)[:, None], min=epsilon)
+	right_encodings_normalized = right_encodings / torch.clamp(right_encodings.norm(dim=1)[:, None], min=epsilon)
 
 	return left_encodings_normalized @ right_encodings_normalized.transpose(0, 1)
 
 def dot_product(left_encodings, right_encodings):
-	return left_encodings_normalized @ right_encodings_normalized.transpose(0, 1)
+	return left_encodings @ right_encodings.transpose(0, 1)

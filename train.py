@@ -12,6 +12,7 @@ import encoders
 import similarity_functions
 import loss_functions
 from matplotlib import pyplot as plt
+import functools
 
 parser = argparse.ArgumentParser(description='Train alignment model for GloVe word embeddings on Flickr30k data.')
 # parser.add_argument('',
@@ -21,8 +22,6 @@ parser.add_argument('--cuda', action='store_true',
 
 args = parser.parse_args()
 
-CAPTION_DATA_PATH = 'outputs/caption_data.pkl'
-CNN_EMBEDDINGS_PATH = 'outputs/cnn_embeddings.pkl'
 DEVICE = 'cuda' if args.cuda else 'cpu'
 
 NUM_EPOCHS = 30
@@ -32,21 +31,10 @@ LEARNING_RATE = 1e-4
 TRAIN_FRACTION = 0.90
 
 def main():
-    with open(CAPTION_DATA_PATH, 'rb') as f:
-        caption_data = pickle.load(f)
+    train_data, val_data = kt.lazy_load(functools.partial(utils.load_caption_image_data, train_fraction=TRAIN_FRACTION), 'outputs/caption_image_data.pkl')   
 
-    with open(CNN_EMBEDDINGS_PATH, 'rb') as f:
-        cnn_embeddings = pickle.load(f)
-
-    # def transform_caption_cnn_data():
-    #     cnn_embeddings
-
-    caption_data = {k:torch.as_tensor(caption_data[k]) for k in caption_data}
-    cnn_embeddings = {k:torch.as_tensor(cnn_embeddings[k]) for k in cnn_embeddings}
-
-    images = sorted(caption_data.keys())
-
-    kt.assert_eq(images, sorted(cnn_embeddings.keys()))
+    train_caption_matrix, train_image_matrix, train_idx_dict = train_data   
+    val_caption_matrix, val_image_matrix, val_idx_dict = val_data
 
     left_encoder = encoders.FCEncoder((300, 300))
     right_encoder = encoders.FCEncoder((2048, 300))
@@ -58,13 +46,6 @@ def main():
     pair_encoder = encoders.PairEncoder(left_encoder, right_encoder)
 
     print(pair_encoder)
-
-    split_idx = int(len(images) * TRAIN_FRACTION)
-    train_images = images[:split_idx]
-    val_images = images[split_idx:]
-
-    train_example_indices = utils.get_example_indices(train_images)
-    val_example_indices = utils.get_example_indices(val_images)
 
     optimizer = torch.optim.Adam(pair_encoder.parameters(), lr=LEARNING_RATE)
 
@@ -83,10 +64,10 @@ def main():
         
             running_loss = 0.0
 
-            curr_example_indices = train_example_indices if phase == 'train' else val_example_indices
+            curr_data = train_data if phase == 'train' else val_data
 
             num_batches = 0
-            for left_x, right_x in utils.flickr_dataloader(curr_example_indices, caption_data, cnn_embeddings, BATCH_SIZE):
+            for left_x, right_x in utils.flickr_dataloader(curr_data, BATCH_SIZE):
                 num_batches += 1
 
                 left_x.to(DEVICE)

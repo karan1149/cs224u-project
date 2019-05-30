@@ -3,6 +3,8 @@ import torch
 import torch.autograd as autograd
 import torch.nn as nn
 import pickle
+import karantools as kt
+from tqdm import tqdm
 
 def compute_output_shape(mod, input_shape):
     """
@@ -70,8 +72,8 @@ def load_caption_image_data(train_fraction=0.9):
 
 '''
 Generator that yields batches of size batch_size with caption data on the left
-and CNN embeddings/features on the right. Batches are randomly shuffled on each run.
-Input data is first copied then shuffled, so it is not modified.
+and CNN embeddings/features on the right. Batches are randomly shuffled on
+each run. Input data is first copied then shuffled, so it is not modified.
 '''
 def flickr_dataloader(curr_data, batch_size):
     caption_matrix, image_matrix, idx_dict = curr_data
@@ -97,3 +99,17 @@ def flickr_dataloader(curr_data, batch_size):
         right_x = image_matrix[batch_i * batch_size: batch_i * batch_size + curr_batch_size]
 
         yield left_x, right_x
+'''
+Saves a set of word vectors represented by stoi, a dictionary-like object
+mapping from words to indices, and vectors, a numpy array of dimensionality
+(num_words, embed_dim) whose indices correspond to the ones returned by stoi.
+Text is formatted in GloVe format as in:
+https://radimrehurek.com/gensim/scripts/glove2word2vec.html
+'''
+def stoi_vectors_to_txt(stoi, vectors, txt_filename):
+    words = sorted(stoi.keys(), key=lambda word: stoi[word])
+
+    with open(txt_filename, 'w') as f:
+        for i, word in tqdm(enumerate(words), total=len(words)):
+            word_embedding = vectors[i].tolist()
+            f.write(word + ' ' + ' '.join([str(entry) for entry in word_embedding]) + '\n')

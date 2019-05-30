@@ -71,12 +71,16 @@ def load_caption_image_data(train_fraction=0.9):
 '''
 Generator that yields batches of size batch_size with caption data on the left
 and CNN embeddings/features on the right. Batches are randomly shuffled on each run.
+Input data is first copied then shuffled, so it is not modified.
 '''
 def flickr_dataloader(curr_data, batch_size):
     caption_matrix, image_matrix, idx_dict = curr_data
 
     num_examples = caption_matrix.shape[0]
     permutation = np.random.permutation(num_examples)
+
+    caption_matrix = caption_matrix[permutation]
+    image_matrix = image_matrix[permutation]
 
     num_batches = int(np.ceil(float(num_examples) / batch_size))
 
@@ -89,7 +93,7 @@ def flickr_dataloader(curr_data, batch_size):
         if batch_i == num_batches - 1:
             curr_batch_size = num_examples % batch_size or batch_size
 
-        left_x = caption_matrix[permutation[batch_i * batch_size: batch_i * batch_size + curr_batch_size]]
-        right_x = image_matrix[permutation[batch_i * batch_size: batch_i * batch_size + curr_batch_size]]
+        left_x = caption_matrix[batch_i * batch_size: batch_i * batch_size + curr_batch_size]
+        right_x = image_matrix[batch_i * batch_size: batch_i * batch_size + curr_batch_size]
 
         yield left_x, right_x

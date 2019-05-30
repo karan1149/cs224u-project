@@ -29,7 +29,7 @@ if torch.cuda.is_available():
 
 print('Training on %s...' % DEVICE)
 
-NUM_EPOCHS = 40
+NUM_EPOCHS = 20
 BATCH_SIZE = 1024
 LEARNING_RATE = 1e-4
 

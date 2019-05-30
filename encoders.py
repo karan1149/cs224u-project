@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import utils
+import karantools as kt
 
 class FCEncoder(nn.Module):
 	def __init__(self, layer_sizes):
@@ -13,11 +15,11 @@ class FCEncoder(nn.Module):
 	def forward(self, x):
 		for layer in self.layers:
 			x = F.relu(layer(x))
-
 		return x
 
-class PairEncoder(object):
+class PairEncoder(nn.Module):
 	def __init__(self, left_encoder, right_encoder):
+		super(PairEncoder, self).__init__()
 		self.left_encoder = left_encoder
 		self.right_encoder = right_encoder
 

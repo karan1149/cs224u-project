@@ -113,3 +113,19 @@ def stoi_vectors_to_txt(stoi, vectors, txt_filename):
         for i, word in tqdm(enumerate(words), total=len(words)):
             word_embedding = vectors[i].tolist()
             f.write(word + ' ' + ' '.join([str(entry) for entry in word_embedding]) + '\n')
+
+def txt_to_stoi_vectors(txt_filename, vec_size=300):
+    num_words = sum(1 for line in open(txt_filename))
+
+    word_vectors = np.zeros((num_words, vec_size))
+    word_stoi = {}
+
+    with open(txt_filename, 'r') as f:
+        for i, line in tqdm(enumerate(f), total=num_words):
+            entries = line.strip().split()
+            kt.assert_eq(len(entries), vec_size + 1)
+            word = entries[0]
+            word_vectors[i] = np.array([float(entry) for entry in entries[1:]])
+            word_stoi[word] = i
+
+    return word_stoi, word_vectors

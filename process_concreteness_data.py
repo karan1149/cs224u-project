@@ -45,38 +45,39 @@ def main():
 	with open('evaluation/concreteness/concreteness_data.pkl', 'wb') as f:
 		pickle.dump([ratings, stoi, abstract_words, concrete_words], f)
 
-def process_similarity_datasets(basepath, newpath):
+def process_similarity_datasets(basepath, concrete_path, abstract_path):
 	filenames = [name for name in os.listdir(basepath) if name.endswith('.txt')]
 
 	with open('evaluation/concreteness/concreteness_data.pkl', 'rb') as f:
 		ratings, stoi, abstract_words, concrete_words = pickle.load(f)
 
-	for filename in filenames:
-		print('Processing', filename)
+	for mode in [(concrete_words, 'C-', concrete_path), (abstract_words, 'A-', abstract_path)]:
+		for filename in filenames:
+			print('Processing', filename)
 
-		curr_path = os.path.join(basepath, filename)
+			curr_path = os.path.join(basepath, filename)
 
-		triples = []
-		with open(curr_path, 'r') as f:
-			for line in f:
-				word1, word2, label = line.strip().split()
-				triples.append((word1, word2, label))
+			triples = []
+			with open(curr_path, 'r') as f:
+				for line in f:
+					word1, word2, label = line.strip().split()
+					triples.append((word1, word2, label))
 
-		print('Found %d triples...' % len(triples))
+			print('Found %d triples...' % len(triples))
 
-		save_path = os.path.join(newpath, filename)
-		save_path.replace('EN-', 'C-')
+			save_path = os.path.join(mode[2], filename)
+			save_path.replace('EN-', mode[1])
 
-		written_lines = 0
-		with open(save_path, 'w') as f:
-			for word1, word2, label in triples:
-				if word1 in concrete_words and word2 in concrete_words:
-					f.write(' '.join([word1, word2, label]) + '\n')
-					written_lines += 1
+			written_lines = 0
+			with open(save_path, 'w') as f:
+				for word1, word2, label in triples:
+					if word1 in mode[0] and word2 in mode[0]:
+						f.write(' '.join([word1, word2, label]) + '\n')
+						written_lines += 1
 
-		print('Wrote %d triples...' % written_lines)
+			print('Wrote %d triples...' % written_lines)
 
 
 if __name__=='__main__':
 	main()
-	process_similarity_datasets('evaluation/eval-word-vectors/data/word-sim', 'evaluation/eval-word-vectors/data/concrete-word-sim')
+	process_similarity_datasets('evaluation/eval-word-vectors/data/word-sim', 'evaluation/eval-word-vectors/data/concrete-word-sim', 'evaluation/eval-word-vectors/data/abstract-word-sim')

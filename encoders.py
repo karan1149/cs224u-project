@@ -13,8 +13,11 @@ class FCEncoder(nn.Module):
 		self.layers = nn.ModuleList(self.layers)
 
 	def forward(self, x):
-		for layer in self.layers:
-			x = F.relu(layer(x))
+		for i, layer in enumerate(self.layers):
+			if i != len(self.layers) - 1:
+				x = F.relu(layer(x))
+			else:
+				x = layer(x)
 		return x
 
 class PairEncoder(nn.Module):

@@ -7,7 +7,7 @@ import utils
 import random
 random.seed(42)
 import functools
-from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_fscore_support
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 
@@ -57,6 +57,12 @@ def main(args):
 	print('Test accuracy', accuracy_score(test_y, test_y_pred))
 
 	print('Test Confusion Matrix\n', confusion_matrix(test_y, test_y_pred))
+
+	prf = precision_recall_fscore_support(test_y, test_y_pred)
+
+	print('Test Precision:', prf[0][1])
+	print('Test Recall:', prf[1][1])
+	print('Test F-Score:', prf[2][1])
 
 
 if __name__=='__main__':

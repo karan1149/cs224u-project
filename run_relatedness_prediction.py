@@ -4,13 +4,13 @@ import numpy as np
 import karantools as kt
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
-from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_fscore_support
 
 GLOVE_RELATEDNESS_PATH = 'outputs/relatedness_glove_data.pkl'
 ENRICHED_RELATEDNESS_PATH = 'outputs/relatedness_enriched_data.pkl'
 
 def evaluate_relatedness(train_X, train_y, test_X, test_y):
-	model = MLPClassifier(early_stopping=True, verbose=True)
+	model = MLPClassifier(early_stopping=True, n_iter_no_change=5, tol=1e-3)
 	model.fit(train_X, train_y)
 
 	train_y_pred = model.predict(train_X)
@@ -23,6 +23,12 @@ def evaluate_relatedness(train_X, train_y, test_X, test_y):
 	print('Test accuracy', accuracy_score(test_y, test_y_pred))
 
 	print('Test Confusion Matrix\n', confusion_matrix(test_y, test_y_pred))
+
+	prf = precision_recall_fscore_support(test_y, test_y_pred)
+
+	print('Test Precision:', prf[0][1])
+	print('Test Recall:', prf[1][1])
+	print('Test F-Score:', prf[2][1])
 
 def main():
 	with open(GLOVE_RELATEDNESS_PATH, 'rb') as f:

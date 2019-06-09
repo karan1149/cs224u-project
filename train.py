@@ -81,9 +81,7 @@ def main(config):
 
                     similarities = getattr(similarity_functions, config['similarity_function'])(left_encodings, right_encodings)
 
-                    loss_args = {}
-                    if config['loss_function'] == 'PredictionSoftmaxLoss':
-                        loss_args['predict_right'] = config['predict_right']
+                    loss_args = config['loss_args']
 
                     criterion = getattr(loss_functions, config['loss_function'])(**loss_args)
 
@@ -104,7 +102,7 @@ def main(config):
     plt.plot(running_losses['val'], label='Val')
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
-    plt.title('Loss: Dot Product + Softmax Right Prediction Task')
+    plt.title('Loss: %s + %s Task' % (config['similarity_function'], config['loss_function']))
     plt.legend(fancybox=True, framealpha=0.5)
     plt.savefig(os.path.join(MODEL_DIR, 'losses.png'))
 

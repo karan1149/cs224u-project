@@ -14,6 +14,7 @@ import loss_functions
 from matplotlib import pyplot as plt
 import functools
 import os
+import json
 
 # parser = argparse.ArgumentParser(description='Train alignment model for GloVe word embeddings on Flickr30k data.')
 # # parser.add_argument('',
@@ -85,7 +86,7 @@ def main(basepath):
                     similarities = similarity_functions.dot_product(left_encodings, right_encodings)
 
 
-                    criterion = loss_functions.PredictionSoftmaxLoss(predict_right=True)
+                    criterion = loss_functions.PredictionSoftmaxLoss(predict_right=False)
 
                     loss = criterion(similarities)
                     running_loss += loss.item()
@@ -106,9 +107,9 @@ def main(basepath):
     plt.ylabel('Loss')
     plt.title('Loss: Dot Product + Softmax Right Prediction Task')
     plt.legend(fancybox=True, framealpha=0.5)
-    plt.savefig('outputs/losses.png')
+    plt.savefig('outputs/left_pred/losses.png')
 
-    torch.save(pair_encoder.state_dict(), 'outputs/pair_encoder.pkl')
+    torch.save(pair_encoder.state_dict(), 'outputs/left_pred/pair_encoder.pkl')
 
 if __name__=='__main__':
     main('.')

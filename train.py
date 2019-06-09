@@ -16,34 +16,30 @@ import functools
 import os
 import json
 
-# parser = argparse.ArgumentParser(description='Train alignment model for GloVe word embeddings on Flickr30k data.')
-# # parser.add_argument('',
-# #                     help='')
-# parser.add_argument('--cuda', action='store_true',
-#                     help='Whether to use GPU or not.')
+def main(config):
 
-# args = parser.parse_args()
+    DEVICE = 'cpu'
+    if torch.cuda.is_available():
+        DEVICE = 'cuda'
 
-DEVICE = 'cpu'
-if torch.cuda.is_available():
-    DEVICE = 'cuda'
+    print('Training on %s...' % DEVICE)
 
-print('Training on %s...' % DEVICE)
 
-NUM_EPOCHS = 20
-BATCH_SIZE = 1024
-LEARNING_RATE = 1e-4
+    NUM_EPOCHS = config['num_epochs']
+    BATCH_SIZE = config['batch_size']
+    LEARNING_RATE = config['learning_rate']
 
-TRAIN_FRACTION = 0.95
+    TRAIN_FRACTION = config['train_fraction']
 
-def main(basepath):
-    train_data, val_data = kt.lazy_load(functools.partial(utils.load_caption_image_data, train_fraction=TRAIN_FRACTION), os.path.join(basepath, 'outputs/caption_image_data.pkl'))   
+    MODEL_DIR = os.path.join('outputs', 'models', config['name'])
+
+    train_data, val_data = kt.lazy_load(functools.partial(utils.load_caption_image_data, train_fraction=TRAIN_FRACTION), 'outputs/caption_image_data.pkl')
 
     train_caption_matrix, train_image_matrix, train_idx_dict = train_data   
     val_caption_matrix, val_image_matrix, val_idx_dict = val_data
 
-    left_encoder = encoders.FCEncoder((300, 300))
-    right_encoder = encoders.FCEncoder((2048, 300))
+    left_encoder = encoders.FCEncoder(config['left_layer_sizes'])
+    right_encoder = encoders.FCEncoder(config['right_layer_sizes'])
 
     kt.assert_eq(len(utils.compute_output_shape(left_encoder, (1, 300))), 2)
     kt.assert_eq(len(utils.compute_output_shape(right_encoder, (1, 2048))), 2)
@@ -83,10 +79,13 @@ def main(basepath):
 
                     left_encodings, right_encodings = pair_encoder(left_x, right_x)
 
-                    similarities = similarity_functions.dot_product(left_encodings, right_encodings)
+                    similarities = getattr(similarity_functions, config['similarity_function'])(left_encodings, right_encodings)
 
+                    loss_args = {}
+                    if config['loss_function'] == 'PredictionSoftmaxLoss':
+                        loss_args['predict_right'] = config['predict_right']
 
-                    criterion = loss_functions.PredictionSoftmaxLoss(predict_right=False)
+                    criterion = getattr(loss_functions, config['loss_function'])(**loss_args)
 
                     loss = criterion(similarities)
                     running_loss += loss.item()
@@ -107,9 +106,16 @@ def main(basepath):
     plt.ylabel('Loss')
     plt.title('Loss: Dot Product + Softmax Right Prediction Task')
     plt.legend(fancybox=True, framealpha=0.5)
-    plt.savefig('outputs/left_pred/losses.png')
+    plt.savefig(os.path.join(MODEL_DIR, 'losses.png'))
 
-    torch.save(pair_encoder.state_dict(), 'outputs/left_pred/pair_encoder.pkl')
+    torch.save(pair_encoder.state_dict(), os.path.join(MODEL_DIR, 'pair_encoder.pkl'))
 
 if __name__=='__main__':
-    main('.')
+    parser = argparse.ArgumentParser(description='Train alignment model for GloVe word embeddings on Flickr30k data.')
+    parser.add_argument('config_path',
+                        help='')
+
+    args = parser.parse_args()
+    with open(args.config_path, 'r') as f:
+        config = json.load(f)
+    main(config)

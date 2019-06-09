@@ -28,7 +28,7 @@ def main():
 
 	pair_encoder = encoders.PairEncoder(left_encoder, right_encoder)
 
-	pair_encoder.load_state_dict(torch.load('outputs/pair_encoder.pkl'))
+	pair_encoder.load_state_dict(torch.load('outputs/left_pred/pair_encoder.pkl'))
 	word_encoder = pair_encoder.left_encoder
 	word_encoder.eval()
 
@@ -48,10 +48,10 @@ def main():
 
 	aligned_vectors = aligned_vectors.numpy()
 
-	with open('outputs/encoded_words.pkl', 'wb') as f:
+	with open('outputs/left_pred/encoded_words.pkl', 'wb') as f:
 		pickle.dump([aligned_stoi, aligned_vectors], f)
 
-	utils.stoi_vectors_to_txt(aligned_stoi, aligned_vectors, 'outputs/encoded_words.txt')
+	utils.stoi_vectors_to_txt(aligned_stoi, aligned_vectors, 'outputs/left_pred/encoded_words.txt')
 
 if __name__=='__main__':
 	main()

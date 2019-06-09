@@ -96,7 +96,9 @@ def main():
 	for image_i, image in tqdm(enumerate(images), total=len(images)):
 		for idx in range(NUM_CAPTIONS_PER_IMAGE):
 			max_term = max_tf_idf_term(raw_captions, image, idx, idfs)
-			random_term = random.choice(vocab)
+			random_term = random.choice(raw_captions[images[(image_i - 1) % len(images)]][idx])
+
+			# print(image, max_term, random_term)
 
 			glove_X[image_i * 10 + idx * 2] = np.concatenate([get_word_vector(max_term), cnn_embeddings[image]])
 			glove_X[image_i * 10 + idx * 2 + 1] = np.concatenate([get_word_vector(random_term), cnn_embeddings[image]])

@@ -7,12 +7,12 @@ from tqdm import tqdm
 import numpy as np
 
 parser = argparse.ArgumentParser(description='Process captions from Flickr30k.')
-parser.add_argument('output_file',
-                    help='Output filename for caption data.')
 
 args = parser.parse_args()
 
 results_path = 'flickr30k_images/results.csv'
+caption_data_path = 'outputs/caption_data.pkl'
+raw_captions_path = 'outputs/raw_captions.pkl'
 VEC_SIZE = 300
 
 def main():
@@ -28,6 +28,7 @@ def main():
 	# Maps from image file name (e.g. "1000092795.jpg") to a list of 5 numpy 
 	# arrays containing average word embeddings for the words in each caption.
 	caption_data = defaultdict(list)
+	raw_captions = defaultdict(list)
 	
 	with open(results_path, 'r') as f:
 		next(iter(f))
@@ -39,6 +40,7 @@ def main():
 			filename = filename.strip()
 			index = int(index_string.strip())
 			caption_tokens = caption.strip().split()
+			found_tokens = []
 
 			average_embedding = np.zeros(VEC_SIZE)
 			found_words = 0.0
@@ -49,16 +51,21 @@ def main():
 				if vec is not None:
 					average_embedding += vec
 					found_words += 1
+					found_tokens.append(token)
 				total_words += 1
 
 			if found_words:
 				average_embedding /= found_words
 
+			raw_captions[filename].append(found_tokens)
+
 			caption_data[filename].append(average_embedding)
 
-	with open(args.output_file, 'wb') as f:
+	with open(caption_data_path, 'wb') as f:
 		pickle.dump(caption_data, f)
 
+	with open(raw_captions_path, 'wb') as f:
+		pickle.dump(raw_captions, f)
 
 if __name__=='__main__':
 	main()

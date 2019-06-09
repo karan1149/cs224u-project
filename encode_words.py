@@ -7,6 +7,9 @@ import karantools as kt
 import encoders
 import utils
 import pickle
+import argparse
+import json
+import os
 
 from torchtext.vocab import GloVe
 
@@ -20,15 +23,17 @@ def get_word_vector(word):
     except KeyError:
       return None
 
-def main():
+def main(config):
 	words = sorted(glove.stoi.keys())
 
-	left_encoder = encoders.FCEncoder((300, 300))
-	right_encoder = encoders.FCEncoder((2048, 300))
+	left_encoder = encoders.FCEncoder(config['left_layer_sizes'])
+	right_encoder = encoders.FCEncoder(config['right_layer_sizes'])
 
 	pair_encoder = encoders.PairEncoder(left_encoder, right_encoder)
 
-	pair_encoder.load_state_dict(torch.load('outputs/left_pred/pair_encoder.pkl'))
+	MODEL_DIR = os.path.join('outputs', 'models', config['name'])
+
+	pair_encoder.load_state_dict(torch.load(os.path.join(MODEL_DIR, 'pair_encoder.pkl')))
 	word_encoder = pair_encoder.left_encoder
 	word_encoder.eval()
 
@@ -48,10 +53,17 @@ def main():
 
 	aligned_vectors = aligned_vectors.numpy()
 
-	with open('outputs/left_pred/encoded_words.pkl', 'wb') as f:
+	with open(os.path.join(MODEL_DIR, 'encoded_words.pkl'), 'wb') as f:
 		pickle.dump([aligned_stoi, aligned_vectors], f)
 
-	utils.stoi_vectors_to_txt(aligned_stoi, aligned_vectors, 'outputs/left_pred/encoded_words.txt')
+	utils.stoi_vectors_to_txt(aligned_stoi, aligned_vectors, os.path.join(MODEL_DIR, 'encoded_words.txt'))
 
 if __name__=='__main__':
-	main()
+	parser = argparse.ArgumentParser(description='Encodes word embeddings using pretrained pair encoder.')
+	parser.add_argument('config_path',
+	                    help='')
+
+	args = parser.parse_args()
+	with open(args.config_path, 'r') as f:
+	    config = json.load(f)
+	main(config)
